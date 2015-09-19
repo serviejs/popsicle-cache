@@ -1,0 +1,46 @@
+{
+  "name": "popsicle-cache",
+  "version": "0.0.0",
+  "description": "Override the Popsicle transport mechanism with HTTP caching",
+  "main": "lib/index.js",
+  "files": [
+    "lib/",
+    "LICENSE"
+  ],
+  "scripts": {
+    "lint": "standard",
+    "test-spec": "blue-tape {lib,test}/**/*.spec.js",
+    "test-cov": "istanbul cover --print none -x *.spec.js blue-tape -- {lib,test}/**/*.spec.js | tap-dot",
+    "test": "npm run lint && npm run test-cov"
+  },
+  "standard": {
+    "ignore": [
+      "coverage/**",
+      "node_modules/**",
+      "bower_components/**"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/blakeembrey/popsicle-cache.git"
+  },
+  "keywords": [],
+  "author": "Blake Embrey <hello@blakeembrey.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/blakeembrey/popsicle-cache/issues"
+  },
+  "homepage": "https://github.com/blakeembrey/popsicle-cache",
+  "devDependencies": {
+    "blue-tape": "^0.1.10",
+    "es6-promise": "^3.0.2",
+    "nock": "^2.12.0",
+    "popsicle": "^1.1.1",
+    "rimraf": "^2.4.3",
+    "standard": "^5.3.0",
+    "tap-dot": "^1.0.0"
+  },
+  "dependencies": {
+    "fs-memory-store": "^0.2.0"
+  }
+}
