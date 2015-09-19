@@ -1,6 +1,6 @@
 {
   "name": "popsicle-cache",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Override the Popsicle transport mechanism with HTTP caching",
   "main": "lib/index.js",
   "files": [
