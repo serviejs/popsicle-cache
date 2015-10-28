@@ -28,10 +28,10 @@ popsicle('http://example.com')
 
 **Options**
 
-* **store** Create a custom store option for request data (default: `MemoryStore`)
+* **store** Create a custom store option for request data (default: `FileSystemMemoryStore`)
 * **staleFallback** Fallback to the stale response when network is unavailable (default: `true`)
 
-**Please note:** Streaming response bodies currently skip the cache.
+**Please note:** Streaming response bodies skip the cache.
 
 ## License
 

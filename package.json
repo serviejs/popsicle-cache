@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "lint": "standard",
-    "test-spec": "blue-tape {lib,test}/**/*.spec.js",
+    "test-spec": "blue-tape {lib,test}/**/*.spec.js | tap-dot",
     "test-cov": "istanbul cover --print none -x *.spec.js blue-tape -- {lib,test}/**/*.spec.js | tap-dot",
     "test": "npm run lint && npm run test-cov"
   },
@@ -43,7 +43,7 @@
     "tap-dot": "^1.0.0"
   },
   "dependencies": {
-    "fs-memory-store": "^0.2.0",
-    "is-stream": "^1.0.1"
+    "is-stream": "^1.0.1",
+    "mkdirp": "^0.5.1"
   }
 }
