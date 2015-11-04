@@ -22,16 +22,19 @@ var cache = require('popsicle-cache')
 popsicle('http://example.com')
   .use(cache())
   .then(function (res) {
-    console.log(res) //=> If fresh, the cached response, otherwise makes a new request.
+    console.log(res) //=> If still fresh, the cached response, otherwise it makes a new request.
   })
 ```
 
 **Options**
 
-* **store** Create a custom store option for request data (default: `FileSystemMemoryStore`)
-* **staleFallback** Fallback to the stale response when network is unavailable (default: `true`)
+* **store** Custom (promise-based) store for response data (`Store` instance, default: `FileSystemStore`)
+* **cache** Use a synchronous in-memory store (`number`, `false` or cache instance, default: `LRUCache({ max: 50000 })`)
+* **staleFallback** Fallback to the stale response when the network is unavailable (default: `true`)
 
-**Please note:** Streaming response bodies skip the cache.
+The built-in filesystem store handles race conditions by queuing file reads and writes.
+
+**Please note:** Streaming response bodies are never cached.
 
 ## License
 

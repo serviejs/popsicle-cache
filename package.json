@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "Override the Popsicle transport mechanism with HTTP caching",
   "main": "lib/index.js",
+  "browser": "lib/browser.js",
   "files": [
     "lib/",
     "LICENSE"
@@ -43,8 +44,11 @@
     "tap-dot": "^1.0.0"
   },
   "dependencies": {
+    "graceful-fs": "^4.1.2",
     "is-stream": "^1.0.1",
+    "lru-cache": "^2.7.0",
     "mkdirp": "^0.5.1",
-    "native-or-bluebird": "^1.2.0"
+    "native-or-bluebird": "^1.2.0",
+    "thenify": "^3.1.1"
   }
 }
