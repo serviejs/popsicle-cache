@@ -35,8 +35,8 @@
   "devDependencies": {
     "blue-tape": "^0.1.10",
     "bluebird": "^3.0.5",
-    "istanbul": "^0.3.20",
-    "nock": "^2.12.0",
+    "istanbul": "^0.4.1",
+    "nock": "^5.2.1",
     "popsicle": "^2.0.1",
     "pre-commit": "^1.1.1",
     "rimraf": "^2.4.3",
@@ -46,7 +46,7 @@
   "dependencies": {
     "graceful-fs": "^4.1.2",
     "is-stream": "^1.0.1",
-    "lru-cache": "^2.7.0",
+    "lru-cache": "^4.0.0",
     "mkdirp": "^0.5.1",
     "native-or-bluebird": "^1.2.0",
     "thenify": "^3.1.1"
