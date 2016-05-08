@@ -7,6 +7,8 @@
 
 > Override the Popsicle transport mechanism with HTTP caching.
 
+**DEPRECATED...** until a streaming cache destination is implemented. See [#5](https://github.com/blakeembrey/popsicle-cache/issues/5).
+
 ## Installation
 
 ```sh
