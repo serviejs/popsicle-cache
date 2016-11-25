@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "catbox": "registry:npm/catbox#7.0.0+20161115004947",
+    "popsicle": "npm:popsicle"
+  },
+  "globalDevDependencies": {
+    "jest": "registry:dt/jest#16.0.0+20161025131017"
+  },
+  "devDependencies": {
+    "nock": "registry:npm/nock#0.7.0+20160723033700"
+  },
+  "globalDependencies": {
+    "node": "registry:env/node#6.0.0+20161105011511"
+  }
+}

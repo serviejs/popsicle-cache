@@ -1,25 +1,18 @@
 {
   "name": "popsicle-cache",
   "version": "3.1.0",
-  "description": "Override the Popsicle transport mechanism with HTTP caching",
-  "main": "lib/index.js",
-  "browser": "lib/browser.js",
+  "description": "Cache HTTP responses using Popsicle",
+  "main": "dist/index.js",
+  "browser": "dist/browser.js",
   "files": [
-    "lib/",
+    "dist/",
     "LICENSE"
   ],
   "scripts": {
-    "lint": "standard",
-    "test-spec": "blue-tape \"lib/**/*.spec.js\"",
-    "test-cov": "istanbul cover --print none -x *.spec.js blue-tape -- \"lib/**/*.spec.js\"",
-    "test": "npm run lint && npm run test-cov"
-  },
-  "standard": {
-    "ignore": [
-      "coverage/**",
-      "node_modules/**",
-      "bower_components/**"
-    ]
+    "lint": "tslint \"src/**/*.ts\"",
+    "build": "rimraf dist && tsc",
+    "test-cov": "jest --verbose --coverage",
+    "test": "npm run lint && npm run build && npm run test-cov"
   },
   "repository": {
     "type": "git",
@@ -33,21 +26,16 @@
   },
   "homepage": "https://github.com/blakeembrey/popsicle-cache",
   "devDependencies": {
-    "blue-tape": "^0.2.0",
-    "bluebird": "^3.0.5",
-    "istanbul": "^0.4.1",
-    "nock": "^8.0.0",
-    "popsicle": "^6.0.0",
+    "catbox-memory": "^2.0.4",
+    "jest": "^17.0.3",
+    "nock": "^9.0.2",
+    "popsicle": "^8.2.0",
     "rimraf": "^2.4.3",
-    "standard": "^7.0.1",
-    "tap-spec": "^4.1.1"
+    "tslint": "^3.15.1",
+    "tslint-config-standard": "^1.5.0",
+    "typescript": "^2.1.1"
   },
   "dependencies": {
-    "any-promise": "^1.0.0",
-    "graceful-fs": "^4.1.2",
-    "is-stream": "^1.0.1",
-    "lru-cache": "^4.0.0",
-    "mkdirp": "^0.5.1",
-    "thenify": "^3.1.1"
+    "catbox": "^7.1.2"
   }
 }
