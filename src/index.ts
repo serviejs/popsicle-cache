@@ -263,14 +263,14 @@ export function plugin (options: Options) {
   const pending = startYourEngine(options.engine, segment)
 
   // Attempt to persist the response into the cache.
-  function shouldCache (client: ClientPromisified, id: string, req: Request, res: Response) {
+  function shouldCache (cache: Cache, id: string, req: Request, res: Response) {
     if (!cacheable(req, res)) {
       return res
     }
 
     // Wrap the cache/serializer into a promise to support `waitForCache` option.
     return new Promise<void>((resolve, reject) => {
-      function cache (err: Error | null, contents: string | null) {
+      function setCache (err: Error | null, contents: string | null) {
         if (err) {
           return resolve(catchCacheError(err))
         }
@@ -289,11 +289,11 @@ export function plugin (options: Options) {
           varyHeaders: getVary(res).map(key => [key, res.get(key)] as [string, string])
         }
 
-        return resolve(client.set(id, item, ttl(req, res)).catch(catchCacheError))
+        return resolve(cache.set(id, item, ttl(req, res)).catch(catchCacheError))
       }
 
       // Handle caching out-of-band with the response.
-      res.body = serializer.stringify(res.body, cache)
+      res.body = serializer.stringify(res.body, setCache)
 
       if (!waitForCache) {
         return resolve()
@@ -305,8 +305,8 @@ export function plugin (options: Options) {
     async handle (req: Request, next: () => Promise<Response>) {
       const id = getId(serializer, req)
 
-      const client = await pending
-      const result = await client.get(id)
+      const cache = await pending
+      const result = await cache.get(id)
       let res: Response
 
       if (!result) {
@@ -342,15 +342,20 @@ export function plugin (options: Options) {
         }
       }
 
-      return await shouldCache(client, id, req, res)
+      return await shouldCache(cache, id, req, res)
     },
     async forceUpdate (req: Request, next: () => Promise<Response>) {
       return await shouldCache(await pending, getId(serializer, req), req, await next())
     },
     async stop () {
-      const client = await pending
+      const cache = await pending
 
-      return client.isReady() ? client.stop() : null
+      return cache.isReady() ? cache.stop() : null
+    },
+    async stats () {
+      const cache = await pending
+
+      return cache.stats()
     }
   }
 }
@@ -358,9 +363,10 @@ export function plugin (options: Options) {
 /**
  * Promise instance of the `catbox` client interface.
  */
-interface ClientPromisified {
+interface Cache {
   stop (): void
   isReady (): boolean
+  stats (): any
   get (id: string): Promise<catbox.Client.Result<CacheItem> | null>
   set (id: string, item: CacheItem, ttl: number): Promise<void>
 }
@@ -369,27 +375,30 @@ interface ClientPromisified {
  * Retrieve the engine when ready.
  */
 function startYourEngine (engine: catbox.Client.Engine<CacheItem>, segment: string) {
-  const client = new catbox.Client(engine)
+  const cache = new catbox.Client(engine)
 
-  return new Promise<ClientPromisified>((resolve, reject) => {
-    client.start(function (err) {
+  return new Promise<Cache>((resolve, reject) => {
+    cache.start(function (err) {
       if (err) {
         return reject(err)
       }
 
+      const policy = new catbox.Policy<CacheItem>({}, cache, segment)
+
       return resolve({
-        stop: () => client.stop(),
-        isReady: () => client.isReady(),
+        stop: () => cache.stop(),
+        isReady: () => cache.isReady(),
+        stats: () => policy.stats,
         get (id: string) {
           return new Promise<catbox.Client.Result<CacheItem> | null>((resolve, reject) => {
-            client.get({ segment, id }, (err, result) => {
-              return err ? reject(err) : resolve(result)
+            policy.get(id, (err, result, cached) => {
+              return err ? reject(err) : resolve(cached)
             })
           })
         },
         set (id: string, value: CacheItem, ttl: number) {
           return new Promise<void>((resolve, reject) => {
-            client.set({ segment, id }, value, ttl, (err) => {
+            policy.set(id, value, ttl, (err) => {
               return err ? reject(err) : resolve()
             })
           })
