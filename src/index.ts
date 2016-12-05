@@ -159,11 +159,13 @@ export const handlers = {
 
       const res = await next()
 
-      // Merge the response with the cached response.
+      // Return the cached response in case of "304 Not Modified".
       if (res.status === 304) {
-        res.body = cache.response.body
-        res.rawHeaders = cache.response.rawHeaders
-        res.url = cache.response.url
+        // But override the cached response status from server.
+        cache.response.status = res.status
+        cache.response.statusText = res.statusText
+
+        return cache.response
       }
 
       return res
@@ -206,39 +208,41 @@ export const serializers = {
     return {
       name: 'stream',
       parse: (value) => {
-        const s = new Readable()
-        s.push(value)
-        s.push(null)
-        return s
+        let o: Buffer | null = new Buffer(value, 'base64')
+
+        return new Readable({
+          read (this: Readable) {
+            this.push(o)
+            o = null
+          }
+        })
       },
       stringify: (stream, cache) => {
-        const s = new PassThrough({ encoding: 'utf8' })
+        const s = new PassThrough()
 
         if (typeof stream.pipe !== 'function') {
           throw new TypeError('The stream serializer only works for readable `stream` instances')
         }
 
-        let value = ''
         let length = 0
+        const strings: Buffer[] = []
 
-        s.on('data', (chunk) => {
+        stream.on('data', (chunk: Buffer) => {
           if (length > maxBufferLength) {
             return
           }
 
-          length += Buffer.byteLength(chunk)
+          length += chunk.length
 
-          if (length > maxBufferLength) {
-            value = ''
-          } else {
-            value += chunk
+          if (length <= maxBufferLength) {
+            strings.push(chunk)
           }
         })
 
-        s.on('error', (err) => cache(err))
+        stream.on('error', (err) => cache(err))
 
-        s.on('end', () => {
-          cache(null, length > maxBufferLength ? null : value)
+        stream.on('end', () => {
+          cache(null, length > maxBufferLength ? null : Buffer.concat(strings).toString('base64'))
         })
 
         return stream.pipe(s)
@@ -337,7 +341,8 @@ export function plugin (options: Options) {
           throw err
         }
 
-        if (res && res.statusType() === 5 && staleFallback) {
+        // Skip the cache attempt when using stale data.
+        if (res === response || (staleFallback && res.statusType() === 5)) {
           return response
         }
       }
