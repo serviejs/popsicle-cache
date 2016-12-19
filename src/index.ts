@@ -244,7 +244,7 @@ export const serializers = {
         let length = 0
         const strings: Buffer[] = []
 
-        stream.on('data', (chunk: Buffer) => {
+        s.on('data', (chunk: Buffer) => {
           if (length > maxBufferLength) {
             return
           }
@@ -256,9 +256,10 @@ export const serializers = {
           }
         })
 
+        s.on('error', (err) => cache(err))
         stream.on('error', (err) => cache(err))
 
-        stream.on('end', () => {
+        s.on('end', () => {
           cache(null, length > maxBufferLength ? null : Buffer.concat(strings).toString('base64'))
         })
 
@@ -285,6 +286,8 @@ export function plugin (options: Options) {
 
   // Attempt to persist the response into the cache.
   function shouldCache (cache: Cache, id: string, req: Request, res: Response) {
+    let cached = false
+
     if (!cacheable(req, res)) {
       return res
     }
@@ -292,6 +295,13 @@ export function plugin (options: Options) {
     // Wrap the cache/serializer into a promise to support `waitForCache` option.
     return new Promise<void>((resolve, reject) => {
       function setCache (err: Error | null, contents: string | null) {
+        // Block multiple calls to `setCache`.
+        if (cached) {
+          return
+        }
+
+        cached = true
+
         if (err) {
           return resolve(catchCacheError(err))
         }
