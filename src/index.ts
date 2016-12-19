@@ -286,14 +286,14 @@ export function plugin (options: Options) {
 
   // Attempt to persist the response into the cache.
   function shouldCache (cache: Cache, id: string, req: Request, res: Response) {
-    let cached = false
-
     if (!cacheable(req, res)) {
       return res
     }
 
     // Wrap the cache/serializer into a promise to support `waitForCache` option.
     return new Promise<void>((resolve, reject) => {
+      let cached = false
+
       function setCache (err: Error | null, contents: string | null) {
         // Block multiple calls to `setCache`.
         if (cached) {
