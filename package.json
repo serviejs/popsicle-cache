@@ -1,6 +1,6 @@
 {
   "name": "popsicle-cache",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Cache HTTP responses using Popsicle",
   "main": "dist/index.js",
   "browser": "dist/browser.js",
