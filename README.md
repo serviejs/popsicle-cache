@@ -88,17 +88,17 @@ Built-in serializer implementations:
 ### `handler` (Function, Default = `handlers.standard()`)
 
 ```ts
-interface CachedResponse {
+class CachedResponse extends popsicle.Response {
   ttl: number
   stored: number
   response: Response
   varyHeaders: Array<[string, string]>
 }
 
-(req: Request, cache: CachedResponse, next: () => Promise<Response>): Response | Promise<Response>
+(req: Request, cache: CachedResponse, next: () => Promise<Response>): Response | CachedResponse | Promise<Response | CachedResponse>
 ```
 
-The request handler that decides whether to use the existing cache, regular response or a combination of both (E.g. setting `If-None-Match` or `If-Modified-Since`).
+The request handler that decides whether to use the existing cache, regular response or a combination of both (E.g. by setting `If-None-Match` or `If-Modified-Since`).
 
 Built-in handler implmentations:
 

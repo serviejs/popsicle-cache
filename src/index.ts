@@ -1,6 +1,6 @@
 import catbox = require('catbox')
 import { PassThrough, Readable } from 'stream'
-import { Request, Response } from 'popsicle'
+import { Request, Response, ResponseOptions } from 'popsicle'
 
 /**
  * The singular entry serialized to the cache.
@@ -15,13 +15,30 @@ export interface CacheItem {
 }
 
 /**
- * The cached response object.
+ * The cached response instance options.
  */
-export interface CachedResponse {
+export interface CachedResponseOptions extends ResponseOptions {
   ttl: number
   stored: number
-  response: Response
   varyHeaders: Array<[string, string]>
+}
+
+/**
+ * The cached response object.
+ */
+export class CachedResponse extends Response {
+
+  ttl: number
+  stored: number
+  varyHeaders: Array<[string, string]>
+
+  constructor (options: CachedResponseOptions) {
+    super(options)
+
+    this.ttl = options.ttl
+    this.stored = options.stored
+    this.varyHeaders = options.varyHeaders
+  }
 }
 
 /**
@@ -117,9 +134,9 @@ export const handlers = {
     // Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching
     return async function (req: Request, cache: CachedResponse, next: () => Promise<Response>) {
       const now = Date.now()
-      const cacheControl = getCacheControl(cache.response)
-      const expiresIn = getExpiresIn(cache.response)
-      const lastModified = getLastModifiedExpiration(cache.response)
+      const cacheControl = getCacheControl(cache)
+      const expiresIn = getExpiresIn(cache)
+      const lastModified = getLastModifiedExpiration(cache)
       let novalidate = cacheControl.immutable || !cacheControl.noCache
 
       // We can avoid revalidation when using `max-age` or `expires`.
@@ -145,16 +162,16 @@ export const handlers = {
         })
 
         if (!varies) {
-          return cache.response
+          return cache
         }
       }
 
-      if (cache.response.get('ETag')) {
-        req.set('If-None-Match', cache.response.get('ETag'))
+      if (cache.get('ETag')) {
+        req.set('If-None-Match', cache.get('ETag'))
       }
 
-      if (cache.response.get('Last-Modified')) {
-        req.set('If-Modified-Since', cache.response.get('Last-Modified'))
+      if (cache.get('Last-Modified')) {
+        req.set('If-Modified-Since', cache.get('Last-Modified'))
       }
 
       const res = await next()
@@ -162,10 +179,10 @@ export const handlers = {
       // Return the cached response in case of "304 Not Modified".
       if (res.status === 304) {
         // But override the cached response status from server.
-        cache.response.status = res.status
-        cache.response.statusText = res.statusText
+        cache.status = res.status
+        cache.statusText = res.statusText
 
-        return cache.response
+        return cache
       }
 
       return res
@@ -173,7 +190,7 @@ export const handlers = {
   },
   always (): Handler {
     return function (req: Request, cache: CachedResponse, next: () => Promise<Response>) {
-      return cache.response
+      return cache
     }
   }
 }
@@ -316,11 +333,13 @@ export function plugin (options: Options) {
       if (!result) {
         res = await next()
       } else {
-        const { ttl, stored, item } = result
-        const { varyHeaders } = item
+        const { item } = result
 
         // Return a cached response instance.
-        const response = new Response({
+        const response = new CachedResponse({
+          ttl: result.ttl,
+          stored: result.stored,
+          varyHeaders: item.varyHeaders,
           url: item.url,
           body: serializer.parse(item.body),
           rawHeaders: item.rawHeaders,
@@ -328,11 +347,8 @@ export function plugin (options: Options) {
           statusText: item.statusText
         })
 
-        // Set the age of the response.
-        response.set('Age', String(Math.floor((Date.now() - stored) / 1000)))
-
         try {
-          res = await handler(req, { response, ttl, stored, varyHeaders }, next)
+          res = await handler(req, response, next)
         } catch (err) {
           if (err.code === 'EUNAVAILABLE' && staleFallback) {
             return response
@@ -342,8 +358,13 @@ export function plugin (options: Options) {
         }
 
         // Skip the cache attempt when using stale data.
-        if (res === response || (staleFallback && res.statusType() === 5)) {
+        if (staleFallback && res.statusType() === 5) {
           return response
+        }
+
+        // Skip the "should cache" step when using a cached response.
+        if (res instanceof CachedResponse) {
+          return res
         }
       }
 
@@ -418,10 +439,10 @@ function startYourEngine (engine: catbox.Client.Engine<CacheItem>, segment: stri
  */
 function getCacheControl (res: Response) {
   const cacheControl = res.get('Cache-Control')
-  const age = /\bmax-age=(\d+)\b/i.exec(cacheControl)
-  const mustRevalidate = /\bmust-revalidate\b/i.test(cacheControl)
-  const noCache = /\bno-cache\b/i.test(cacheControl)
-  const immutable = /\bimmutable\b/i.test(cacheControl)
+  const age = cacheControl ? /\bmax-age=(\d+)\b/i.exec(cacheControl) : undefined
+  const mustRevalidate = cacheControl ? /\bmust-revalidate\b/i.test(cacheControl) : undefined
+  const noCache = cacheControl ? /\bno-cache\b/i.test(cacheControl) : undefined
+  const immutable = cacheControl ? /\bimmutable\b/i.test(cacheControl) : undefined
   const maxAge = age ? parseInt(age[1], 10) * 1000 : null
 
   return { maxAge, noCache, immutable, mustRevalidate }
