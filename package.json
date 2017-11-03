@@ -38,6 +38,6 @@
     "typings": "^2.0.0"
   },
   "dependencies": {
-    "catbox": "^7.1.2"
+    "catbox": "^10.0.1"
   }
 }
